@@ -22,7 +22,7 @@ const loginUser = catchAsync(async (req, res) => {
     message: "User logged in successfully!",
     data: {
       accessToken,
-      refreshToken
+      refreshToken,
     },
   });
 });
@@ -68,16 +68,16 @@ const forgotPassword = catchAsync(async (req: Request, res: Response) => {
 
 // reset password
 
-const verifyOTP = catchAsync(async (req: Request, res: Response) => {
-  const result = await AuthService.verifyOTP(req.body);
+// const verifyOTP = catchAsync(async (req: Request, res: Response) => {
+//   const result = await AuthService.verifyOTP(req.body);
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "OTP verified successfully.",
-    data: result,
-  });
-});
+//   sendResponse(res, {
+//     statusCode: StatusCodes.OK,
+//     success: true,
+//     message: "OTP verified successfully.",
+//     data: result,
+//   });
+// });
 
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
@@ -97,6 +97,6 @@ export const AuthController = {
   refreshToken,
   changePassword,
   forgotPassword,
-  verifyOTP,
+  // verifyOTP,
   resetPassword,
 };

@@ -1,16 +1,20 @@
-import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
-import { IJwtPayload } from './auth.interface';
+import jwt, { JwtPayload, Secret, SignOptions } from "jsonwebtoken";
+import config from "../../config";
+import { StringValue } from "ms";
 
+// You may define an interface for payload if needed
 export const createToken = (
-    jwtPayload: IJwtPayload,
-    secret: Secret,
-    expiresIn: string,
-) => {
-    return jwt.sign(jwtPayload, secret, {
-        expiresIn,
-    });
+  payload: string | Buffer | object,
+  secret: Secret,
+  expiresIn: StringValue | number
+): string => {
+  const options: SignOptions = {
+    expiresIn,
+  };
+
+  return jwt.sign(payload, secret, options);
 };
 
 export const verifyToken = (token: string, secret: Secret) => {
-    return jwt.verify(token, secret) as JwtPayload;
+  return jwt.verify(token, secret) as JwtPayload;
 };

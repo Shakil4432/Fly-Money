@@ -8,9 +8,9 @@ import { Category } from "../category/category.model";
 import { Product } from "./product.model";
 import QueryBuilder from "../../builder/QueryBuilder";
 import { ProductSearchableFields } from "./product.constant";
-import { Order } from "../order/order.model";
+// import { Order } from "../order/order.model";
 import Shop from "../shop/shop.model";
-import { IOrderProduct } from "../order/order.interface";
+// import { IOrderProduct } from "../order/order.interface";
 import { Review } from "../review/review.model";
 import { FlashSale } from "../flashSell/flashSale.model";
 import { off } from "process";
@@ -200,57 +200,57 @@ const getAllProduct = async (query: Record<string, unknown>) => {
   };
 };
 
-const getTrendingProducts = async (limit: number) => {
-  const now = new Date();
-  const last30Days = new Date(now.setDate(now.getDate() - 30));
+// const getTrendingProducts = async (limit: number) => {
+//   const now = new Date();
+//   const last30Days = new Date(now.setDate(now.getDate() - 30));
 
-  const trendingProducts = await Order.aggregate([
-    {
-      $match: {
-        createdAt: { $gte: last30Days },
-      },
-    },
-    {
-      $unwind: "$products",
-    },
-    {
-      $group: {
-        _id: "$products.product",
-        orderCount: { $sum: "$products.quantity" },
-      },
-    },
-    {
-      $sort: { orderCount: -1 },
-    },
-    {
-      $limit: limit || 10,
-    },
-    {
-      $lookup: {
-        from: "products",
-        localField: "_id",
-        foreignField: "_id",
-        as: "productDetails",
-      },
-    },
-    {
-      $unwind: "$productDetails",
-    },
-    {
-      $project: {
-        _id: 0,
-        productId: "$_id",
-        orderCount: 1,
-        name: "$productDetails.name",
-        price: "$productDetails.price",
-        offer: "$productDetails.offer",
-        imageUrls: "$productDetails.imageUrls",
-      },
-    },
-  ]);
+//   const trendingProducts = await Order.aggregate([
+//     {
+//       $match: {
+//         createdAt: { $gte: last30Days },
+//       },
+//     },
+//     {
+//       $unwind: "$products",
+//     },
+//     {
+//       $group: {
+//         _id: "$products.product",
+//         orderCount: { $sum: "$products.quantity" },
+//       },
+//     },
+//     {
+//       $sort: { orderCount: -1 },
+//     },
+//     {
+//       $limit: limit || 10,
+//     },
+//     {
+//       $lookup: {
+//         from: "products",
+//         localField: "_id",
+//         foreignField: "_id",
+//         as: "productDetails",
+//       },
+//     },
+//     {
+//       $unwind: "$productDetails",
+//     },
+//     {
+//       $project: {
+//         _id: 0,
+//         productId: "$_id",
+//         orderCount: 1,
+//         name: "$productDetails.name",
+//         price: "$productDetails.price",
+//         offer: "$productDetails.offer",
+//         imageUrls: "$productDetails.imageUrls",
+//       },
+//     },
+//   ]);
 
-  return trendingProducts;
-};
+//   return trendingProducts;
+// };
 
 const getSingleProduct = async (productId: string) => {
   const product = await Product.findById(productId).populate("brand category");
@@ -394,7 +394,7 @@ const deleteProduct = async (productId: string, authUser: IJwtPayload) => {
 export const ProductService = {
   createProduct,
   getAllProduct,
-  getTrendingProducts,
+  // getTrendingProducts,
   getSingleProduct,
   updateProduct,
   deleteProduct,
