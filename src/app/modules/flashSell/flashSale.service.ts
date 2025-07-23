@@ -8,21 +8,10 @@ import Shop from "../shop/shop.model";
 import QueryBuilder from "../../builder/QueryBuilder";
 import { Product } from "../product/product.model";
 
-
-const createFlashSale = async (flashSellData: ICreateFlashSaleInput, authUser: IJwtPayload) => {
-  const userHasShop = await User.findById(authUser.userId).select('isActive hasShop');
-
-  if (!userHasShop) throw new AppError(StatusCodes.NOT_FOUND, "User not found!");
-  if (!userHasShop.isActive) throw new AppError(StatusCodes.BAD_REQUEST, "User account is not active!");
-  if (!userHasShop.hasShop) throw new AppError(StatusCodes.BAD_REQUEST, "User does not have any shop!");
-
-  const shopIsActive = await Shop.findOne({
-    user: userHasShop._id,
-    isActive: true
-  }).select("isActive");
-
-  if (!shopIsActive) throw new AppError(StatusCodes.BAD_REQUEST, "Shop is not active!");
-
+const createFlashSale = async (
+  flashSellData: ICreateFlashSaleInput,
+  authUser: IJwtPayload
+) => {
   const { products, discountPercentage } = flashSellData;
   const createdBy = authUser.userId;
 
@@ -49,13 +38,12 @@ const getActiveFlashSalesService = async (query: Record<string, unknown>) => {
 
   const flashSaleQuery = new QueryBuilder(
     FlashSale.find()
-      .populate('product')
-      .populate('product.category', 'name')
-      .populate('product.shop', 'shopName')
-      .populate('product.brand', 'name'),
+      .populate("product")
+      .populate("product.category", "name")
+      .populate("product.shop", "shopName")
+      .populate("product.brand", "name"),
     query
-  )
-    .paginate();
+  ).paginate();
 
   const flashSales = await flashSaleQuery.modelQuery.lean();
 
@@ -72,7 +60,7 @@ const getActiveFlashSalesService = async (query: Record<string, unknown>) => {
 
     if (discountPercentage) {
       const discount = (discountPercentage / 100) * product.price;
-      product.offerPrice = product.price - discount;
+      product.offerPrice = (product.price - discount).toFixed(2);
     } else {
       product.offerPrice = null;
     }
@@ -88,9 +76,7 @@ const getActiveFlashSalesService = async (query: Record<string, unknown>) => {
   };
 };
 
-
-
 export const FlashSaleService = {
   createFlashSale,
-  getActiveFlashSalesService
-}
+  getActiveFlashSalesService,
+};

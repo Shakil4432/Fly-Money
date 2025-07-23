@@ -1,6 +1,7 @@
 import { Document, Types } from "mongoose";
 
 export interface IProduct extends Document {
+  userId: Types.ObjectId;
   name: string;
   slug: string;
   description: string;
@@ -11,7 +12,6 @@ export interface IProduct extends Document {
   category: Types.ObjectId;
   imageUrls: string[];
   isActive: boolean;
-  shop: Types.ObjectId;
   brand: Types.ObjectId;
   averageRating?: number;
   ratingCount?: number;
