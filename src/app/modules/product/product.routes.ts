@@ -10,6 +10,7 @@ import { productValidation } from "./product.validation";
 const router = Router();
 
 router.get("/", ProductController.getAllProduct);
+router.get("/all-products", ProductController.getAllProductWithoutPagination);
 
 // router.get('/trending', ProductController.getTrendingProducts);
 
@@ -32,7 +33,7 @@ router.post(
 
 router.patch(
   "/:productId",
-  auth(UserRole.USER),
+  auth(UserRole.USER, UserRole.ADMIN),
   multerUpload.fields([{ name: "images" }]),
   parseBody,
   ProductController.updateProduct
@@ -40,7 +41,7 @@ router.patch(
 
 router.delete(
   "/:productId",
-  auth(UserRole.USER),
+  auth(UserRole.USER, UserRole.ADMIN),
   ProductController.deleteProduct
 );
 

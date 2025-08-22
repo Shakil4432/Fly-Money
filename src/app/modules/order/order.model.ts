@@ -1,159 +1,145 @@
-// import { Schema, Types, model } from "mongoose";
-// import { IOrder } from "./order.interface";
-// import { Product } from "../product/product.model";
-// import { Coupon } from "../coupon/coupon.model";
-// import AppError from "../../errors/appError";
-// import { StatusCodes } from "http-status-codes";
+import { Schema, Types, model } from "mongoose";
+import { IOrder } from "./order.interface";
+import { Product } from "../product/product.model";
+import { Coupon } from "../coupon/coupon.model";
+import AppError from "../../errors/appError";
+import { StatusCodes } from "http-status-codes";
 
-// const orderSchema = new Schema<IOrder>(
-//   {
-//     user: {
-//       type: Schema.Types.ObjectId,
-//       ref: "User",
-//       required: true,
-//     },
-//     shop: {
-//       type: Schema.Types.ObjectId,
-//       ref: "Shop",
-//       required: true,
-//     },
-//     products: [
-//       {
-//         product: {
-//           type: Schema.Types.ObjectId,
-//           ref: "Product",
-//           required: true,
-//         },
-//         quantity: {
-//           type: Number,
-//           required: true,
-//           min: 1,
-//         },
-//         unitPrice: {
-//           type: Number,
-//           required: true,
-//         },
-//         color: {
-//           type: String,
-//           required: true,
-//         },
-//       },
-//     ],
-//     coupon: {
-//       type: Schema.Types.ObjectId,
-//       ref: "Coupon",
-//       default: null,
-//     },
-//     totalAmount: {
-//       type: Number,
-//       required: true,
-//       min: 0,
-//     },
-//     discount: {
-//       type: Number,
-//       default: 0,
-//       min: 0,
-//     },
-//     deliveryCharge: {
-//       type: Number,
-//       default: 0,
-//     },
-//     finalAmount: {
-//       type: Number,
-//       required: true,
-//       min: 0,
-//     },
-//     status: {
-//       type: String,
-//       enum: ["Pending", "Processing", "Completed", "Cancelled"],
-//       default: "Pending",
-//     },
-//     shippingAddress: {
-//       type: String,
-//       required: true,
-//     },
-//     paymentMethod: {
-//       type: String,
-//       enum: ["COD", "Online"],
-//       default: "Online",
-//     },
-//     paymentStatus: {
-//       type: String,
-//       enum: ["Pending", "Paid", "Failed"],
-//       default: "Pending",
-//     },
-//   },
-//   {
-//     timestamps: true,
-//   }
-// );
+const orderSchema = new Schema<IOrder>(
+  {
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
 
-// // Pre-save hook to calculate total, discount, delivery charge, and final price
-// orderSchema.pre("validate", async function (next) {
-//   const order = this;
+    products: [
+      {
+        product: {
+          type: Schema.Types.ObjectId,
+          ref: "Product",
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+          min: 1,
+        },
+        unitPrice: {
+          type: Number,
+          required: true,
+        },
+        color: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
+    coupon: {
+      type: Schema.Types.ObjectId,
+      ref: "Coupon",
+      default: null,
+    },
+    totalAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    discount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    deliveryCharge: {
+      type: Number,
+      default: 0,
+    },
+    finalAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    status: {
+      type: String,
+      enum: ["Pending", "Processing", "Completed", "Cancelled"],
+      default: "Pending",
+    },
+    shippingAddress: {
+      type: String,
+      required: true,
+    },
+    paymentMethod: {
+      type: String,
+      enum: ["COD", "Online"],
+      default: "Online",
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["Pending", "Paid", "Failed"],
+      default: "Pending",
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-//   // Step 1: Initialize total amount
-//   let totalAmount = 0;
-//   let finalDiscount = 0;
-//   let shopId: Schema.Types.ObjectId | null = null;
+// Pre-save hook to calculate total, discount, delivery charge, and final price
+orderSchema.pre("validate", async function (next) {
+  const order = this;
 
-//   // Step 2: Calculate total amount for products
-//   for (let item of order.products) {
-//     const product = await Product.findById(item.product).populate("shop");
+  // Step 1: Initialize total amount
+  let totalAmount = 0;
+  let finalDiscount = 0;
 
-//     if (!product) {
-//       return next(new Error(`Product not found!.`));
-//     }
-//     if (shopId && String(shopId) !== String(product.shop._id)) {
-//       return next(new Error("Products must be from the same shop."));
-//     }
+  // Step 2: Calculate total amount for products
+  for (let item of order.products) {
+    const product = await Product.findById(item.product);
 
-//     //@ts-ignore
-//     shopId = product.shop._id;
+    if (!product) {
+      return next(new Error(`Product not found!.`));
+    }
 
-//     const offerPrice = (await product?.calculateOfferPrice()) || 0;
+    const offerPrice = (await product?.calculateOfferPrice()) || 0;
 
-//     let productPrice = product.price;
-//     if (offerPrice) productPrice = Number(offerPrice);
+    let productPrice = product.price;
+    if (offerPrice) productPrice = Number(offerPrice);
 
-//     item.unitPrice = productPrice;
-//     const price = productPrice * item.quantity;
-//     console.log(price);
-//     totalAmount += price;
-//   }
+    item.unitPrice = productPrice;
+    const price = productPrice * item.quantity;
+    console.log(price);
+    totalAmount += price;
+  }
 
-//   if (order.coupon) {
-//     const couponDetails = await Coupon.findById(order.coupon);
-//     if (String(shopId) === couponDetails?.shop.toString()) {
-//       throw new AppError(StatusCodes.BAD_REQUEST, "The coupon is not applicable for your selected products")
-//     }
-//     if (couponDetails && couponDetails.isActive) {
-//       if (totalAmount >= couponDetails.minOrderAmount) {
-//         if (couponDetails.discountType === "Percentage") {
-//           finalDiscount = Math.min(
-//             (couponDetails.discountValue / 100) * totalAmount,
-//             couponDetails.maxDiscountAmount
-//               ? couponDetails.maxDiscountAmount
-//               : Infinity
-//           );
-//         } else if (couponDetails.discountType === "Flat") {
-//           finalDiscount = Math.min(couponDetails.discountValue, totalAmount);
-//         }
-//       }
-//     }
-//   }
+  if (order.coupon) {
+    const couponDetails = await Coupon.findById(order.coupon);
 
-//   const isDhaka = order?.shippingAddress?.toLowerCase()?.includes("dhaka");
-//   const deliveryCharge = isDhaka ? 60 : 120;
+    if (couponDetails && couponDetails.isActive) {
+      if (totalAmount >= couponDetails.minOrderAmount) {
+        if (couponDetails.discountType === "Percentage") {
+          finalDiscount = Math.min(
+            (couponDetails.discountValue / 100) * totalAmount,
+            couponDetails.maxDiscountAmount
+              ? couponDetails.maxDiscountAmount
+              : Infinity
+          );
+        } else if (couponDetails.discountType === "Flat") {
+          finalDiscount = Math.min(couponDetails.discountValue, totalAmount);
+        }
+      }
+    }
+  }
 
-//   order.totalAmount = totalAmount;
-//   order.discount = finalDiscount;
-//   order.deliveryCharge = deliveryCharge;
-//   order.finalAmount = totalAmount - finalDiscount + deliveryCharge;
-//   //@ts-ignore
-//   order.shop = shopId;
+  const isDhaka = order?.shippingAddress?.toLowerCase()?.includes("dhaka");
+  const deliveryCharge = isDhaka ? 60 : 120;
 
-//   next();
-// });
+  order.totalAmount = totalAmount;
+  order.discount = finalDiscount;
+  order.deliveryCharge = deliveryCharge;
+  order.finalAmount = totalAmount - finalDiscount + deliveryCharge;
+  //@ts-ignore
 
-// export const Order = model<IOrder>("Order", orderSchema);
+  next();
+});
+
+export const Order = model<IOrder>("Order", orderSchema);

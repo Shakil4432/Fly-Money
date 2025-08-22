@@ -27,12 +27,31 @@ const createProduct = async (
 
   productData.imageUrls = images.map((image) => image.path);
 
-  const isCategoryExists = await Category.findById(productData.category);
-  if (!isCategoryExists) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Category does not exist!");
+  const isParentCategoryExists = await Category.findById(
+    productData.parentCategory
+  );
+  const isSubCategoryExists = await Category.findById(productData.subCategory);
+  const isThirdSubCategoryExists = await Category.findById(
+    productData.thirdSubCategory
+  );
+  console.log(
+    isParentCategoryExists,
+    isSubCategoryExists,
+    isThirdSubCategoryExists
+  );
+  if (
+    !isParentCategoryExists ||
+    !isSubCategoryExists ||
+    !isThirdSubCategoryExists
+  ) {
+    throw new AppError(StatusCodes.BAD_REQUEST, " Category does not exist!");
   }
 
-  if (!isCategoryExists.isActive) {
+  if (
+    !isParentCategoryExists.isActive ||
+    !isSubCategoryExists.isActive ||
+    !isThirdSubCategoryExists.isActive
+  ) {
     throw new AppError(StatusCodes.BAD_REQUEST, "Category is not active!");
   }
 
@@ -100,6 +119,8 @@ const createProduct = async (
 
 const getAllProduct = async (query: Record<string, unknown>) => {
   const {
+    minOfferPrice,
+    maxOfferPrice,
     minPrice,
     maxPrice,
     categories,
@@ -151,15 +172,26 @@ const getAllProduct = async (query: Record<string, unknown>) => {
   }
 
   const productQuery = new QueryBuilder(
-    Product.find(filter).populate("category", "name").populate("brand", "name"),
+    Product.find(filter)
+      .populate("parentCategory", "name")
+      .populate("subCategory", "name")
+      .populate("thirdSubCategory", "name"),
     pQuery
   )
     .search(["name", "description"])
     .filter()
+    .filterByCategories()
+    .filterByBrandAndColor()
+    .priceRange(Number(minPrice) || 0, Number(maxPrice) || Infinity)
+    .offerPriceRange()
+    .ratingRange()
+    .stockRange()
+    .isActiveFilter()
     .sort()
+
     .paginate()
-    .fields()
-    .priceRange(Number(minPrice) || 0, Number(maxPrice) || Infinity);
+    .fields();
+  // .priceRange(Number(minPrice) || 0, Number(maxPrice) || Infinity);
 
   const products = await productQuery.modelQuery.lean();
 
@@ -253,7 +285,7 @@ const getAllProduct = async (query: Record<string, unknown>) => {
 // };
 
 const getSingleProduct = async (productId: string) => {
-  const product = await Product.findById(productId).populate("brand category");
+  const product = await Product.findById(productId).populate("parentCategory");
 
   if (!product) {
     throw new AppError(StatusCodes.NOT_FOUND, "Product not found");
@@ -311,8 +343,8 @@ const getMyShopProducts = async (
     .filter()
     .sort()
     .paginate()
-    .fields()
-    .priceRange(Number(minPrice) || 0, Number(maxPrice) || Infinity);
+    .fields();
+  // .priceRange(Number(minPrice) || 0, Number(maxPrice) || Infinity);
 
   const products = await productQuery.modelQuery.lean();
 
@@ -372,23 +404,20 @@ const updateProduct = async (
 
 const deleteProduct = async (productId: string, authUser: IJwtPayload) => {
   const user = await User.findById(authUser.userId);
-  const shop = await Shop.findOne({ user: user?._id });
+
   const product = await Product.findOne({
-    shop: shop?._id,
     _id: productId,
   });
 
-  if (!user?.isActive) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "User is not active");
-  }
-  if (!shop) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "You don't have a shop");
-  }
   if (!product) {
     throw new AppError(StatusCodes.NOT_FOUND, "Product Not Found");
   }
 
   return await Product.findByIdAndDelete(productId);
+};
+const getAllProductWithoutPagination = async () => {
+  const result = await Product.find().populate("parentCategory", "name");
+  return result;
 };
 
 export const ProductService = {
@@ -399,4 +428,5 @@ export const ProductService = {
   updateProduct,
   deleteProduct,
   getMyShopProducts,
+  getAllProductWithoutPagination,
 };

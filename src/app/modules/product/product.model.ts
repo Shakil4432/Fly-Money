@@ -11,7 +11,6 @@ const productSchema = new Schema<IProduct>(
     name: {
       type: String,
       required: [true, "Product name is required"],
-      unique: true,
       trim: true,
     },
     slug: {
@@ -40,10 +39,20 @@ const productSchema = new Schema<IProduct>(
       min: 0,
       default: null,
     },
-    category: {
+    parentCategory: {
       type: Schema.Types.ObjectId,
       ref: "Category",
-      required: [true, "Category is required"],
+      required: [true, "ParentCategory is required"],
+    },
+    subCategory: {
+      type: Schema.Types.ObjectId,
+      ref: "Category",
+      required: [true, "subCategory is required"],
+    },
+    thirdSubCategory: {
+      type: Schema.Types.ObjectId,
+      ref: "Category",
+      required: [true, "thirdSubCategory is required"],
     },
     imageUrls: {
       type: [String],
@@ -55,8 +64,7 @@ const productSchema = new Schema<IProduct>(
     },
 
     brand: {
-      type: Schema.Types.ObjectId,
-      ref: "Brand",
+      type: String,
       required: [true, "Brand of product is required"],
     },
     averageRating: {

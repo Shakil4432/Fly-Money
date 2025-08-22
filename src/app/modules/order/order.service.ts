@@ -1,141 +1,141 @@
-// import mongoose, { Types } from "mongoose";
-// import { IJwtPayload } from "../auth/auth.interface";
-// import { Coupon } from "../coupon/coupon.model";
-// import { IOrder } from "./order.interface";
-// import { Order } from "./order.model";
-// import { Product } from "../product/product.model";
-// import { Payment } from "../payment/payment.model";
-// import { generateTransactionId } from "../payment/payment.utils";
-// import { sslService } from "../sslcommerz/sslcommerz.service";
-// import { generateOrderInvoicePDF } from "../../utils/generateOrderInvoicePDF";
-// import { EmailHelper } from "../../utils/emailHelper";
-// import User from "../user/user.model";
-// import AppError from "../../errors/appError";
-// import { StatusCodes } from "http-status-codes";
-// import Shop from "../shop/shop.model";
-// import QueryBuilder from "../../builder/QueryBuilder";
+import mongoose, { Types } from "mongoose";
+import { IJwtPayload } from "../auth/auth.interface";
+import { Coupon } from "../coupon/coupon.model";
+import { IOrder } from "./order.interface";
+import { Order } from "./order.model";
+import { Product } from "../product/product.model";
+import { Payment } from "../payment/payment.model";
+import { generateTransactionId } from "../payment/payment.utils";
 
-// const createOrder = async (
-//   orderData: Partial<IOrder>,
-//   authUser: IJwtPayload
-// ) => {
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
+import { EmailHelper } from "../../utils/emailHelper";
+import User from "../user/user.model";
+import AppError from "../../errors/appError";
+import { StatusCodes } from "http-status-codes";
+import Shop from "../shop/shop.model";
+import QueryBuilder from "../../builder/QueryBuilder";
+import { sslService } from "../sslcommerz/sslcommerz.service";
+import { generateOrderInvoicePDF } from "../../utils/generateOrderInvoicePDF";
 
-//   try {
-//     if (orderData.products) {
-//       for (const productItem of orderData.products) {
-//         const product = await Product.findById(productItem.product)
-//           .populate("shop")
-//           .session(session);
+const createOrder = async (
+  orderData: Partial<IOrder>,
+  authUser: IJwtPayload
+) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-//         if (product) {
-//           if (product.isActive === false) {
-//             throw new Error(`Product ${product?.name} is inactive.`);
-//           }
+  try {
+    if (orderData.products) {
+      for (const productItem of orderData.products) {
+        const product = await Product.findById(productItem.product).session(
+          session
+        );
 
-//           if (product.stock < productItem.quantity) {
-//             throw new Error(`Insufficient stock for product: ${product.name}`);
-//           }
-//           // Decrement the product stock
-//           product.stock -= productItem.quantity;
-//           await product.save({ session });
-//         } else {
-//           throw new Error(`Product not found: ${productItem.product}`);
-//         }
-//       }
-//     }
+        if (product) {
+          if (product.isActive === false) {
+            throw new Error(`Product ${product?.name} is inactive.`);
+          }
 
-//     // Handle coupon and update orderData
-//     if (orderData.coupon) {
-//       const coupon = await Coupon.findOne({ code: orderData.coupon }).session(
-//         session
-//       );
-//       if (coupon) {
-//         const currentDate = new Date();
+          if (product.stock < productItem.quantity) {
+            throw new Error(`Insufficient stock for product: ${product.name}`);
+          }
+          // Decrement the product stock
+          product.stock -= productItem.quantity;
+          await product.save({ session });
+        } else {
+          throw new Error(`Product not found: ${productItem.product}`);
+        }
+      }
+    }
 
-//         // Check if the coupon is within the valid date range
-//         if (currentDate < coupon.startDate) {
-//           throw new Error(`Coupon ${coupon.code} has not started yet.`);
-//         }
+    // Handle coupon and update orderData
+    if (orderData.coupon) {
+      const coupon = await Coupon.findOne({ code: orderData.coupon }).session(
+        session
+      );
+      if (coupon) {
+        const currentDate = new Date();
 
-//         if (currentDate > coupon.endDate) {
-//           throw new Error(`Coupon ${coupon.code} has expired.`);
-//         }
+        // Check if the coupon is within the valid date range
+        if (currentDate < coupon.startDate) {
+          throw new Error(`Coupon ${coupon.code} has not started yet.`);
+        }
 
-//         orderData.coupon = coupon._id as Types.ObjectId;
-//       } else {
-//         throw new Error("Invalid coupon code.");
-//       }
-//     }
+        if (currentDate > coupon.endDate) {
+          throw new Error(`Coupon ${coupon.code} has expired.`);
+        }
 
-//     // Create the order
-//     const order = new Order({
-//       ...orderData,
-//       user: authUser.userId,
-//     });
+        orderData.coupon = coupon._id as Types.ObjectId;
+      } else {
+        throw new Error("Invalid coupon code.");
+      }
+    }
 
-//     const createdOrder = await order.save({ session });
-//     await createdOrder.populate("user products.product");
+    // Create the order
+    const order = new Order({
+      ...orderData,
+      user: authUser.userId,
+    });
 
-//     const transactionId = generateTransactionId();
+    const createdOrder = await order.save({ session });
+    await createdOrder.populate("user products.product");
 
-//     const payment = new Payment({
-//       user: authUser.userId,
-//       shop: createdOrder.shop,
-//       order: createdOrder._id,
-//       method: orderData.paymentMethod,
-//       transactionId,
-//       amount: createdOrder.finalAmount,
-//     });
+    const transactionId = generateTransactionId();
 
-//     await payment.save({ session });
+    const payment = new Payment({
+      user: authUser.userId,
+      order: createdOrder._id,
+      method: orderData.paymentMethod,
+      transactionId,
+      amount: createdOrder.finalAmount,
+    });
 
-//     let result;
+    await payment.save({ session });
 
-//     if (createdOrder.paymentMethod == "Online") {
-//       result = await sslService.initPayment({
-//         total_amount: createdOrder.finalAmount,
-//         tran_id: transactionId,
-//       });
-//       result = { paymentUrl: result };
-//     } else {
-//       result = order;
-//     }
+    let result;
 
-//     // Commit the transaction
-//     await session.commitTransaction();
-//     session.endSession();
+    if (createdOrder.paymentMethod == "Online") {
+      result = await sslService.initPayment({
+        total_amount: createdOrder.finalAmount,
+        tran_id: transactionId,
+      });
+      result = { paymentUrl: result };
+    } else {
+      result = order;
+    }
 
-//     // const pdfBuffer = await generateOrderInvoicePDF(createdOrder);
-//     // const emailContent = await EmailHelper.createEmailContent(
-//     //   //@ts-ignore
-//     //   { userName: createdOrder.user.name || "" },
-//     //   "orderInvoice"
-//     // );
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
 
-//     // const attachment = {
-//     //   filename: `Invoice_${createdOrder._id}.pdf`,
-//     //   content: pdfBuffer,
-//     //   encoding: "base64", // if necessary
-//     // };
+    const pdfBuffer = await generateOrderInvoicePDF(createdOrder);
+    const emailContent = await EmailHelper.createEmailContent(
+      //@ts-ignore
+      { userName: createdOrder.user.name || "" },
+      "orderInvoice"
+    );
 
-//     // await EmailHelper.sendEmail(
-//     //   //@ts-ignore
-//     //   createdOrder.user.email,
-//     //   emailContent,
-//     //   "Order confirmed!",
-//     //   attachment
-//     // );
-//     return result;
-//   } catch (error) {
-//     console.log(error);
-//     // Rollback the transaction in case of error
-//     await session.abortTransaction();
-//     session.endSession();
-//     throw error;
-//   }
-// };
+    const attachment = {
+      filename: `Invoice_${createdOrder._id}.pdf`,
+      content: pdfBuffer,
+      encoding: "base64", // if necessary
+    };
+
+    await EmailHelper.sendEmail(
+      //@ts-ignore
+      createdOrder.user.email,
+      emailContent,
+      "Order confirmed!",
+      attachment
+    );
+    return result;
+  } catch (error) {
+    console.log(error);
+    // Rollback the transaction in case of error
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};
 
 // const getMyShopOrders = async (
 //   query: Record<string, unknown>,
@@ -182,80 +182,61 @@
 //   };
 // };
 
-// const getOrderDetails = async (orderId: string) => {
-//   const order = await Order.findById(orderId).populate(
-//     "user products.product coupon"
-//   );
-//   if (!order) {
-//     throw new AppError(StatusCodes.NOT_FOUND, "Order not Found");
-//   }
+const getOrderDetails = async (orderId: string) => {
+  const order = await Order.findById(orderId).populate(
+    "user products.product coupon"
+  );
+  if (!order) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Order not Found");
+  }
 
-//   order.payment = await Payment.findOne({ order: order._id });
-//   return order;
-// };
+  order.payment = await Payment.findOne({ order: order._id });
+  return order;
+};
 
-// const getMyOrders = async (
-//   query: Record<string, unknown>,
-//   authUser: IJwtPayload
-// ) => {
-//   const orderQuery = new QueryBuilder(
-//     Order.find({ user: authUser.userId }).populate(
-//       "user products.product coupon"
-//     ),
-//     query
-//   )
-//     .search(["user.name", "user.email", "products.product.name"])
-//     .filter()
-//     .sort()
-//     .paginate()
-//     .fields();
+const getMyOrders = async (
+  query: Record<string, unknown>,
+  authUser: IJwtPayload
+) => {
+  const orderQuery = new QueryBuilder(
+    Order.find({ user: authUser.userId }).populate(
+      "user products.product coupon"
+    ),
+    query
+  )
+    .search(["user.name", "user.email", "products.product.name"])
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
 
-//   const result = await orderQuery.modelQuery;
+  const result = await orderQuery.modelQuery;
 
-//   const meta = await orderQuery.countTotal();
+  const meta = await orderQuery.countTotal();
 
-//   return {
-//     meta,
-//     result,
-//   };
-// };
+  return {
+    meta,
+    result,
+  };
+};
 
-// const changeOrderStatus = async (
-//   orderId: string,
-//   status: string,
-//   authUser: IJwtPayload
-// ) => {
-//   const userHasShop = await User.findById(authUser.userId).select(
-//     "isActive hasShop"
-//   );
+const changeOrderStatus = async (
+  orderId: string,
+  status: string,
+  authUser: IJwtPayload
+) => {
+  const order = await Order.findOneAndUpdate(
+    { _id: new Types.ObjectId(orderId) },
+    { status },
+    { new: true }
+  );
+  return order;
+};
 
-//   if (!userHasShop)
-//     throw new AppError(StatusCodes.NOT_FOUND, "User not found!");
-//   if (!userHasShop.isActive)
-//     throw new AppError(StatusCodes.BAD_REQUEST, "User account is not active!");
-//   if (!userHasShop.hasShop)
-//     throw new AppError(StatusCodes.BAD_REQUEST, "User does not have any shop!");
-
-//   const shopIsActive = await Shop.findOne({
-//     user: userHasShop._id,
-//     isActive: true,
-//   }).select("isActive");
-
-//   if (!shopIsActive)
-//     throw new AppError(StatusCodes.BAD_REQUEST, "Shop is not active!");
-
-//   const order = await Order.findOneAndUpdate(
-//     { _id: new Types.ObjectId(orderId), shop: shopIsActive._id },
-//     { status },
-//     { new: true }
-//   );
-//   return order;
-// };
-
-// export const OrderService = {
-//   createOrder,
-//   getMyShopOrders,
-//   getOrderDetails,
-//   getMyOrders,
-//   changeOrderStatus,
-// };
+export const OrderService = {
+  createOrder,
+  //   getMyShopOrders,
+  getOrderDetails,
+  getMyOrders,
+  changeOrderStatus,
+};

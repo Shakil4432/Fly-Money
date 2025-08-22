@@ -14,26 +14,27 @@ const createFlashSale = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,
     success: true,
-    message: 'Flash Sale created succesfully',
+    message: "Flash Sale created succesfully",
     data: result,
   });
 });
 
-const getActiveFlashSalesService = catchAsync(async (req: Request, res: Response) => {
-  const result = await FlashSaleService.getActiveFlashSalesService(
-    req.query
-  );
+const getActiveFlashSalesService = catchAsync(
+  async (req: Request, res: Response) => {
+    console.log(req.query);
+    const result = await FlashSaleService.getActiveFlashSalesService(req.query);
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: 'Flash Sale created succesfully',
-    meta: result.meta,
-    data: result.result
-  });
-});
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Flash Sale created succesfully",
+      meta: result.meta,
+      data: result.result,
+    });
+  }
+);
 
 export const FlashSaleController = {
   createFlashSale,
-  getActiveFlashSalesService
-}
+  getActiveFlashSalesService,
+};

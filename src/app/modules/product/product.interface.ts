@@ -9,10 +9,12 @@ export interface IProduct extends Document {
   stock: number;
   weight: number | null;
   offerPrice?: number | null;
-  category: Types.ObjectId;
+  parentCategory?: Types.ObjectId;
+  subCategory?: Types.ObjectId;
+  thirdSubCategory?: Types.ObjectId;
   imageUrls: string[];
   isActive: boolean;
-  brand: Types.ObjectId;
+  brand: string;
   averageRating?: number;
   ratingCount?: number;
   availableColors: string[];

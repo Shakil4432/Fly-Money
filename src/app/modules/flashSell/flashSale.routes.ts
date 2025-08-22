@@ -1,16 +1,16 @@
-import { Router } from 'express';
-import { FlashSaleController } from './flashSale.controller';
-import auth from '../../middleware/auth';
-import { UserRole } from '../user/user.interface';
+import { Router } from "express";
+import { FlashSaleController } from "./flashSale.controller";
+import auth from "../../middleware/auth";
+import { UserRole } from "../user/user.interface";
 
 const router = Router();
 
-router.get('/', FlashSaleController.getActiveFlashSalesService)
+router.get("/", FlashSaleController.getActiveFlashSalesService);
 
 router.post(
-    '/',
-    auth(UserRole.USER),
-    FlashSaleController.createFlashSale
-)
+  "/",
+  auth(UserRole.USER, UserRole.ADMIN),
+  FlashSaleController.createFlashSale
+);
 
 export const FlashSaleRoutes = router;

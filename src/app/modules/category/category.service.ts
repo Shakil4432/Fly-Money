@@ -5,7 +5,6 @@ import { IImageFile } from "../../interface/IImageFile";
 import { IJwtPayload } from "../auth/auth.interface";
 import { ICategory } from "./category.interface";
 import { Category } from "./category.model";
-import User from "../user/user.model";
 import { UserRole } from "../user/user.interface";
 import { Product } from "../product/product.model";
 
@@ -14,11 +13,10 @@ const createCategory = async (
   icon: IImageFile,
   authUser: IJwtPayload
 ) => {
-
   const category = new Category({
     ...categoryData,
     createdBy: authUser.userId,
-    icon: icon?.path
+    icon: icon?.path,
   });
 
   const result = await category.save();
@@ -28,13 +26,12 @@ const createCategory = async (
 
 const getAllCategory = async (query: Record<string, unknown>) => {
   const categoryQuery = new QueryBuilder(
-    Category.find().populate('parent'),
-    query,
+    Category.find().populate("parent"),
+    query
   )
-    .search(['name', 'slug'])
+    .search(["name", "slug"])
     .filter()
     .sort()
-    .paginate()
     .fields();
 
   const categories = await categoryQuery.modelQuery;
@@ -44,13 +41,18 @@ const getAllCategory = async (query: Record<string, unknown>) => {
   const hierarchy: any[] = [];
 
   categories.forEach((category: any) => {
-    categoryMap.set(category._id.toString(), { ...category.toObject(), children: [] });
+    categoryMap.set(category._id.toString(), {
+      ...category.toObject(),
+      children: [],
+    });
   });
 
   categories.forEach((category: any) => {
     const parentId = category.parent?._id?.toString();
     if (parentId && categoryMap.has(parentId)) {
-      categoryMap.get(parentId).children.push(categoryMap.get(category._id.toString()));
+      categoryMap
+        .get(parentId)
+        .children.push(categoryMap.get(category._id.toString()));
     } else if (!parentId) {
       hierarchy.push(categoryMap.get(category._id.toString()));
     }
@@ -61,6 +63,11 @@ const getAllCategory = async (query: Record<string, unknown>) => {
     result: hierarchy,
   };
 };
+const getParentCategories = async () => {
+  const categories = Category.find({ parent: null });
+  console.log(categories);
+  return categories;
+};
 
 const updateCategoryIntoDB = async (
   id: string,
@@ -70,56 +77,92 @@ const updateCategoryIntoDB = async (
 ) => {
   const isCategoryExist = await Category.findById(id);
   if (!isCategoryExist) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Category not found!")
-  }
-
-  if ((authUser.role === UserRole.USER) && (isCategoryExist.createdBy.toString() !== authUser.userId)) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "You are not able to edit the category!")
-  }
-
-  if (file && file.path) {
-    payload.icon = file.path
-  }
-
-  const result = await Category.findByIdAndUpdate(
-    id,
-    payload,
-    { new: true }
-  );
-
-  return result;
-};
-
-const deleteCategoryIntoDB = async (
-  id: string,
-  authUser: IJwtPayload
-) => {
-  const isBrandExist = await Category.findById(id);
-  if (!isBrandExist) {
-    throw new AppError(StatusCodes.NOT_FOUND, 'Category not found!');
+    throw new AppError(StatusCodes.NOT_FOUND, "Category not found!");
   }
 
   if (
     authUser.role === UserRole.USER &&
-    isBrandExist.createdBy.toString() !== authUser.userId
+    isCategoryExist.createdBy.toString() !== authUser.userId
   ) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
-      'You are not able to delete the Category!'
+      "You are not able to edit the category!"
     );
   }
 
-  const product = await Product.findOne({ category: id })
-  if (product) throw new AppError(StatusCodes.BAD_REQUEST, "You can not delete the Category. Because the Category is related to products.");
+  if (file && file.path) {
+    payload.icon = file.path;
+  }
 
-  const deletedCategory = await Category.findByIdAndDelete(id);
-  return deletedCategory;
+  const result = await Category.findByIdAndUpdate(id, payload, { new: true });
+
+  return result;
 };
 
+import { Types } from "mongoose";
+
+const deleteCategoryIntoDB = async (id: string, authUser: IJwtPayload) => {
+  const isCategoryExist = await Category.findById(id);
+  if (!isCategoryExist) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Category not found!");
+  }
+
+  // Check permission
+  if (
+    authUser.role === UserRole.USER &&
+    isCategoryExist.createdBy.toString() !== authUser.userId
+  ) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "You are not able to delete the Category!"
+    );
+  }
+
+  // Prevent delete if linked to products
+  const product = await Product.findOne({ parentCategory: id });
+  if (product) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "You cannot delete this Category because it is related to products."
+    );
+  }
+
+  // ✅ Recursively find all descendants based on `parent`
+  const findAllDescendantIds = async (parentId: string): Promise<string[]> => {
+    const allIds: Set<string> = new Set();
+    const queue: string[] = [parentId];
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+      allIds.add(currentId);
+
+      const children: any[] = await Category.find({
+        parent: new Types.ObjectId(currentId),
+      });
+
+      for (const child of children) {
+        queue.push(child._id.toString());
+      }
+    }
+
+    return Array.from(allIds);
+  };
+
+  const allCategoryIdsToDelete = await findAllDescendantIds(id);
+
+  // ✅ Delete all at once
+  await Category.deleteMany({ _id: { $in: allCategoryIdsToDelete } });
+
+  return {
+    message: "Category and all its nested subcategories deleted successfully!",
+    deletedIds: allCategoryIdsToDelete,
+  };
+};
 
 export const CategoryService = {
   createCategory,
   getAllCategory,
+  getParentCategories,
   updateCategoryIntoDB,
-  deleteCategoryIntoDB
-}
+  deleteCategoryIntoDB,
+};

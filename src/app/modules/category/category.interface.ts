@@ -4,7 +4,7 @@ export interface ICategory extends Document {
   name: string;
   slug: string;
   description?: string;
-  parent?: Types.ObjectId;
+  parent: Types.ObjectId | null;
   isActive: boolean;
   createdBy: Types.ObjectId;
   icon?: string;

@@ -1,34 +1,30 @@
-import { Schema, model } from 'mongoose';
-import { IPayment } from './payment.interface';
+import { Schema, model } from "mongoose";
+import { IPayment } from "./payment.interface";
 
 const paymentSchema = new Schema<IPayment>(
   {
     user: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
     order: {
       type: Schema.Types.ObjectId,
-      ref: 'Order',
+      ref: "Order",
       required: true,
     },
-    shop: {
-      type: Schema.Types.ObjectId,
-      ref: 'Shop',
-      required: true,
-    },
+
     method: {
       type: String,
-      enum: ['COD', 'Online'],
+      enum: ["COD", "Online"],
       required: true,
-      default: 'Online',
+      default: "Online",
     },
     status: {
       type: String,
-      enum: ['Pending', 'Paid', 'Failed'],
+      enum: ["Pending", "Paid", "Failed"],
       required: true,
-      default: 'Pending',
+      default: "Pending",
     },
     transactionId: {
       type: String,
@@ -49,4 +45,4 @@ const paymentSchema = new Schema<IPayment>(
   }
 );
 
-export const Payment = model<IPayment>('Payment', paymentSchema);
+export const Payment = model<IPayment>("Payment", paymentSchema);

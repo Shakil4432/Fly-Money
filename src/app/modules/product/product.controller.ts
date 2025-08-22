@@ -32,6 +32,16 @@ const getAllProduct = catchAsync(async (req, res) => {
     data: result.result,
   });
 });
+const getAllProductWithoutPagination = catchAsync(async (req, res) => {
+  const result = await ProductService.getAllProductWithoutPagination();
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Products are retrieved successfully",
+    data: result,
+  });
+});
 
 // const getTrendingProducts = catchAsync(async (req, res) => {
 //   const { limit } = req.query;
@@ -121,4 +131,5 @@ export const ProductController = {
   updateProduct,
   deleteProduct,
   getMyShopProducts,
+  getAllProductWithoutPagination,
 };

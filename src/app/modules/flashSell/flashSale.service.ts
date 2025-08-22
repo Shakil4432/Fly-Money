@@ -37,22 +37,22 @@ const getActiveFlashSalesService = async (query: Record<string, unknown>) => {
   const { minPrice, maxPrice, ...pQuery } = query;
 
   const flashSaleQuery = new QueryBuilder(
-    FlashSale.find()
-      .populate("product")
-      .populate("product.category", "name")
-      .populate("product.shop", "shopName")
-      .populate("product.brand", "name"),
+    FlashSale.find().populate("product"),
     query
   ).paginate();
 
   const flashSales = await flashSaleQuery.modelQuery.lean();
 
+  console.log(flashSales);
+
   const flashSaleMap = flashSales.reduce((acc, flashSale) => {
     //@ts-ignore
+
     acc[flashSale.product._id.toString()] = flashSale.discountPercentage;
     return acc;
   }, {});
 
+  console.log(flashSaleMap);
   const productsWithOfferPrice = flashSales.map((flashSale: any) => {
     const product = flashSale.product;
     //@ts-ignore
@@ -60,7 +60,7 @@ const getActiveFlashSalesService = async (query: Record<string, unknown>) => {
 
     if (discountPercentage) {
       const discount = (discountPercentage / 100) * product.price;
-      product.offerPrice = (product.price - discount).toFixed(2);
+      product.offerPrice = product.price - discount;
     } else {
       product.offerPrice = null;
     }

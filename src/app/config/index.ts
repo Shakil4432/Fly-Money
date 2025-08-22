@@ -13,9 +13,8 @@ export default {
   jwt_refresh_secret: process.env.JWT_REFRESH_SECRET,
   jwt_refresh_expires_in: process.env.JWT_REFRESH_EXPIRES_IN,
   jwt_otp_secret: process.env.JWT_OTP_SECRET,
-  jwt_pass_reset_secret:
-    process.env.JWT_PASS_RESET_SECRET || "defaultResetSecret",
-  jwt_pass_reset_expires_in: process.env.JWT_PASS_RESET_EXPIRES_IN || "5m",
+  jwt_pass_reset_secret: process.env.JWT_PASS_RESET_SECRET,
+  jwt_pass_reset_expires_in: process.env.JWT_PASS_RESET_EXPIRES_IN,
   admin_email: process.env.ADMIN_EMAIL,
   admin_password: process.env.ADMIN_PASSWORD,
   admin_profile_photo: process.env.ADMIN_PROFILE_PHOTO,

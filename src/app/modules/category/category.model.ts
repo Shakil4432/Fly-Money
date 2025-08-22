@@ -1,32 +1,29 @@
 import { Schema, model, Document, Types } from "mongoose";
 import { ICategory } from "./category.interface";
 
-// Extend Mongoose Document with ICategory
-interface ICategoryDocument extends Document, ICategory { }
+interface ICategoryDocument extends Document, ICategory {}
 
-// Define the schema
 const categorySchema = new Schema<ICategoryDocument>(
   {
     name: {
       type: String,
       required: [true, "Category name is required"],
-      unique: true,
       trim: true,
     },
     slug: {
       type: String,
       required: [true, "Category slug is required"],
+      trim: true,
       unique: true,
-      trim: true,
-    },
-    description: {
-      type: String,
-      trim: true,
     },
     parent: {
       type: Schema.Types.ObjectId,
       ref: "Category",
       default: null,
+    },
+    description: {
+      type: String,
+      trim: true,
     },
     isActive: {
       type: Boolean,
@@ -47,13 +44,38 @@ const categorySchema = new Schema<ICategoryDocument>(
   }
 );
 
-categorySchema.pre<ICategory>("validate", function (next) {
-  if (this instanceof Document) {
-    if (this.isModified("name") && !this.slug) {
-      this.slug = this.name.toLowerCase().replace(/ /g, "-").replace(/[^\w-]+/g, "");
-    }
+import slugify from "slugify";
+
+// Helper function to build full slug path
+async function buildFullSlug(categoryId: string | null): Promise<string> {
+  if (!categoryId) return "";
+
+  const parentCategory = await Category.findById(categoryId).lean();
+  if (!parentCategory) return "";
+
+  const parentSlug = await buildFullSlug(
+    parentCategory.parent?.toString() || null
+  );
+  return parentSlug
+    ? `${parentSlug}-${parentCategory.slug}`
+    : parentCategory.slug;
+}
+
+// Auto-generate slug from name
+categorySchema.pre<ICategoryDocument>("validate", async function (next) {
+  const baseSlug = slugify(this.name, { lower: true });
+
+  if (this.parent) {
+    const parentSlug = await buildFullSlug(this.parent.toString());
+    this.slug = `${parentSlug}-${baseSlug}`;
+  } else {
+    this.slug = baseSlug;
   }
+
   next();
 });
+
+// Optional: You could enforce uniqueness at app level like this
+categorySchema.index({ name: 1, parent: 1 }, { unique: true });
 
 export const Category = model<ICategoryDocument>("Category", categorySchema);
