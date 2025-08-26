@@ -12,7 +12,9 @@ const router = Router();
 router.get("/", ProductController.getAllProduct);
 router.get("/all-products", ProductController.getAllProductWithoutPagination);
 
-// router.get('/trending', ProductController.getTrendingProducts);
+router.get("/trending", ProductController.getTrendingProducts);
+router.get("/new-arrival", ProductController.getNewArrivalProducts);
+router.get("/top-rated", ProductController.getTopRatedProducts);
 
 router.get(
   "/my-shop-products",

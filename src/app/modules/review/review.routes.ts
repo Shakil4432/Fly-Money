@@ -10,10 +10,6 @@ router.get(
   auth(UserRole.ADMIN, UserRole.USER),
   ReviewControllers.getAllReviews
 );
-router.post(
-  "/",
-  auth(UserRole.USER, UserRole.ADMIN),
-  ReviewControllers.createReview
-);
+router.post("/", ReviewControllers.createReview);
 
 export const ReviewRoutes = router;

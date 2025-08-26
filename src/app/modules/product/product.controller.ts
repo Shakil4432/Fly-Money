@@ -43,17 +43,41 @@ const getAllProductWithoutPagination = catchAsync(async (req, res) => {
   });
 });
 
-// const getTrendingProducts = catchAsync(async (req, res) => {
-//   const { limit } = req.query;
-//   const result = await ProductService.getTrendingProducts(Number(limit));
+const getTrendingProducts = catchAsync(async (req, res) => {
+  const { limit } = req.query;
+  const result = await ProductService.getTrendingProducts(Number(limit));
 
-//   sendResponse(res, {
-//     statusCode: StatusCodes.OK,
-//     success: true,
-//     message: "Products are retrieved successfully",
-//     data: result,
-//   });
-// });
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Products are retrieved successfully",
+    data: result,
+  });
+});
+
+const getNewArrivalProducts = catchAsync(async (req, res) => {
+  const { limit } = req.query;
+  const result = await ProductService.getNewArrivalProducts(Number(limit));
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Products are retrieved successfully",
+    data: result,
+  });
+});
+
+const getTopRatedProducts = catchAsync(async (req, res) => {
+  const { limit } = req.query;
+  const result = await ProductService.getTopRatedProducts(Number(limit));
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Products are retrieved successfully",
+    data: result,
+  });
+});
 const getSingleProduct = catchAsync(async (req, res) => {
   const { productId } = req.params;
   const result = await ProductService.getSingleProduct(productId);
@@ -126,10 +150,12 @@ const deleteProduct = catchAsync(async (req, res) => {
 export const ProductController = {
   createProduct,
   getAllProduct,
-  // getTrendingProducts,
+  getTrendingProducts,
   getSingleProduct,
   updateProduct,
   deleteProduct,
   getMyShopProducts,
   getAllProductWithoutPagination,
+  getNewArrivalProducts,
+  getTopRatedProducts,
 };

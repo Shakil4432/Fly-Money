@@ -14,6 +14,7 @@ import Shop from "../shop/shop.model";
 import { Review } from "../review/review.model";
 import { FlashSale } from "../flashSell/flashSale.model";
 import { off } from "process";
+import { Order } from "../order/order.model";
 
 const createProduct = async (
   productData: Partial<IProduct>,
@@ -232,57 +233,57 @@ const getAllProduct = async (query: Record<string, unknown>) => {
   };
 };
 
-// const getTrendingProducts = async (limit: number) => {
-//   const now = new Date();
-//   const last30Days = new Date(now.setDate(now.getDate() - 30));
+const getTrendingProducts = async (limit: number = 10) => {
+  const now = new Date();
+  const last30Days = new Date(now.setDate(now.getDate() - 30));
 
-//   const trendingProducts = await Order.aggregate([
-//     {
-//       $match: {
-//         createdAt: { $gte: last30Days },
-//       },
-//     },
-//     {
-//       $unwind: "$products",
-//     },
-//     {
-//       $group: {
-//         _id: "$products.product",
-//         orderCount: { $sum: "$products.quantity" },
-//       },
-//     },
-//     {
-//       $sort: { orderCount: -1 },
-//     },
-//     {
-//       $limit: limit || 10,
-//     },
-//     {
-//       $lookup: {
-//         from: "products",
-//         localField: "_id",
-//         foreignField: "_id",
-//         as: "productDetails",
-//       },
-//     },
-//     {
-//       $unwind: "$productDetails",
-//     },
-//     {
-//       $project: {
-//         _id: 0,
-//         productId: "$_id",
-//         orderCount: 1,
-//         name: "$productDetails.name",
-//         price: "$productDetails.price",
-//         offer: "$productDetails.offer",
-//         imageUrls: "$productDetails.imageUrls",
-//       },
-//     },
-//   ]);
+  const trendingProducts = await Order.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: last30Days },
+      },
+    },
+    {
+      $unwind: "$products",
+    },
+    {
+      $group: {
+        _id: "$products.product",
+        orderCount: { $sum: "$products.quantity" },
+      },
+    },
+    {
+      $sort: { orderCount: -1 },
+    },
+    {
+      $limit: limit || 10,
+    },
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "_id",
+        as: "productDetails",
+      },
+    },
+    {
+      $unwind: "$productDetails",
+    },
+    {
+      $project: {
+        _id: 0,
+        productId: "$_id",
+        orderCount: 1,
+        name: "$productDetails.name",
+        price: "$productDetails.price",
+        offer: "$productDetails.offer",
+        imageUrls: "$productDetails.imageUrls",
+      },
+    },
+  ]);
 
-//   return trendingProducts;
-// };
+  return trendingProducts;
+};
 
 const getSingleProduct = async (productId: string) => {
   const product = await Product.findById(productId).populate("parentCategory");
@@ -420,13 +421,44 @@ const getAllProductWithoutPagination = async () => {
   return result;
 };
 
+const getNewArrivalProducts = async (limit: number = 10) => {
+  // Fetch the most recently added active products
+  const newArrivalProducts = await Product.find({ isActive: true })
+    .sort({ createdAt: -1 }) // Most recent first
+    .limit(limit)
+    .populate("parentCategory", "name")
+    .populate("subCategory", "name")
+    .populate("thirdSubCategory", "name")
+    .lean();
+
+  return newArrivalProducts;
+};
+
+const getTopRatedProducts = async (limit: number = 10) => {
+  // Fetch active products sorted by averageRating
+  const topRatedProducts = await Product.find({
+    isActive: true,
+    averageRating: { $in: [4, 5, 3, 2, 1] },
+  })
+    .sort({ averageRating: -1 }) // Highest rating first
+    .limit(limit)
+    .populate("parentCategory", "name")
+    .populate("subCategory", "name")
+    .populate("thirdSubCategory", "name")
+    .lean();
+
+  return topRatedProducts;
+};
+
 export const ProductService = {
   createProduct,
   getAllProduct,
-  // getTrendingProducts,
+  getTrendingProducts,
   getSingleProduct,
   updateProduct,
   deleteProduct,
   getMyShopProducts,
   getAllProductWithoutPagination,
+  getNewArrivalProducts,
+  getTopRatedProducts,
 };
