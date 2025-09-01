@@ -4,7 +4,6 @@ import { CategoryService } from "./category.service";
 import { IImageFile } from "../../interface/IImageFile";
 import sendResponse from "../../utils/sendResponse";
 import { StatusCodes } from "http-status-codes";
-import { IUser } from "../user/user.interface";
 import { IJwtPayload } from "../auth/auth.interface";
 
 const createCategory = catchAsync(async (req: Request, res: Response) => {

@@ -6,10 +6,7 @@ import { MetaService } from "./meta.service";
 import { IJwtPayload } from "../auth/auth.interface";
 
 const getMetaData = catchAsync(async (req: Request, res: Response) => {
-  const result = await MetaService.getMetaData(
-    req.query,
-    req.user as IJwtPayload
-  );
+  const result = await MetaService.getMetaData(req.query);
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,

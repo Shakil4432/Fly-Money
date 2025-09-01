@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import AppError from "../../errors/appError";
-import { IImageFile, IImageFiles } from "../../interface/IImageFile";
+import { IImageFiles } from "../../interface/IImageFile";
 import { IJwtPayload } from "../auth/auth.interface";
 import User from "../user/user.model";
 import { IProduct } from "./product.interface";
@@ -13,7 +13,7 @@ import Shop from "../shop/shop.model";
 // import { IOrderProduct } from "../order/order.interface";
 import { Review } from "../review/review.model";
 import { FlashSale } from "../flashSell/flashSale.model";
-import { off } from "process";
+
 import { Order } from "../order/order.model";
 
 const createProduct = async (
@@ -179,7 +179,7 @@ const getAllProduct = async (query: Record<string, unknown>) => {
       .populate("thirdSubCategory", "name"),
     pQuery
   )
-    .search(["name", "description"])
+    .search(ProductSearchableFields)
     .filter()
     .filterByCategories()
     .filterByBrandAndColor()

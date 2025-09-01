@@ -1,5 +1,4 @@
 import jwt, { JwtPayload, Secret, SignOptions } from "jsonwebtoken";
-import config from "../../config";
 import { StringValue } from "ms";
 
 // You may define an interface for payload if needed

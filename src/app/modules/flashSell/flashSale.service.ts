@@ -1,12 +1,7 @@
-import { StatusCodes } from "http-status-codes";
-import AppError from "../../errors/appError";
 import { IJwtPayload } from "../auth/auth.interface";
 import { ICreateFlashSaleInput, IFlashSale } from "./flashSale.interface";
 import { FlashSale } from "./flashSale.model";
-import User from "../user/user.model";
-import Shop from "../shop/shop.model";
 import QueryBuilder from "../../builder/QueryBuilder";
-import { Product } from "../product/product.model";
 
 const createFlashSale = async (
   flashSellData: ICreateFlashSaleInput,

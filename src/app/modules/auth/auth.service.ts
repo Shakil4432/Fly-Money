@@ -43,12 +43,12 @@ const loginUser = async (payload: IAuth) => {
     const accessToken = createToken(
       jwtPayload,
       config.jwt_access_secret as string,
-      "10d"
+      "1m"
     );
 
     const refreshToken = createToken(
       jwtPayload,
-      config.jwt_access_secret as string,
+      config.jwt_refresh_secret as string,
       "365d"
     );
 

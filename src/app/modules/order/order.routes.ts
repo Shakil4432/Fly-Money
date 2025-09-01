@@ -23,6 +23,12 @@ router.get(
 );
 
 router.get(
+  "/admin-orders",
+  auth(UserRole.ADMIN),
+  OrderController.getOrdersByAdmin
+);
+
+router.get(
   "/:orderId",
   auth(UserRole.USER, UserRole.ADMIN),
   OrderController.getOrderDetails

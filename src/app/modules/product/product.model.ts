@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from "mongoose";
+import { Schema, model } from "mongoose";
 import { IProduct } from "./product.interface";
 import { FlashSale } from "../flashSell/flashSale.model";
 

@@ -26,7 +26,7 @@ router.get("/:productId", ProductController.getSingleProduct);
 
 router.post(
   "/",
-  auth(UserRole.USER),
+  auth(UserRole.ADMIN),
   multerUpload.fields([{ name: "images" }]),
   parseBody,
   validateRequest(productValidation.createProductValidationSchema),

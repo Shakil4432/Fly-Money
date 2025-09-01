@@ -137,50 +137,50 @@ const createOrder = async (
   }
 };
 
-// const getMyShopOrders = async (
-//   query: Record<string, unknown>,
-//   authUser: IJwtPayload
-// ) => {
-//   const userHasShop = await User.findById(authUser.userId).select(
-//     "isActive hasShop"
-//   );
+const getMyShopOrders = async (
+  query: Record<string, unknown>,
+  authUser: IJwtPayload
+) => {
+  const userHasShop = await User.findById(authUser.userId).select(
+    "isActive hasShop"
+  );
 
-//   if (!userHasShop)
-//     throw new AppError(StatusCodes.NOT_FOUND, "User not found!");
-//   if (!userHasShop.isActive)
-//     throw new AppError(StatusCodes.BAD_REQUEST, "User account is not active!");
-//   if (!userHasShop.hasShop)
-//     throw new AppError(StatusCodes.BAD_REQUEST, "User does not have any shop!");
+  if (!userHasShop)
+    throw new AppError(StatusCodes.NOT_FOUND, "User not found!");
+  if (!userHasShop.isActive)
+    throw new AppError(StatusCodes.BAD_REQUEST, "User account is not active!");
+  if (!userHasShop.hasShop)
+    throw new AppError(StatusCodes.BAD_REQUEST, "User does not have any shop!");
 
-//   const shopIsActive = await Shop.findOne({
-//     user: userHasShop._id,
-//     isActive: true,
-//   }).select("isActive");
+  const shopIsActive = await Shop.findOne({
+    user: userHasShop._id,
+    isActive: true,
+  }).select("isActive");
 
-//   if (!shopIsActive)
-//     throw new AppError(StatusCodes.BAD_REQUEST, "Shop is not active!");
+  if (!shopIsActive)
+    throw new AppError(StatusCodes.BAD_REQUEST, "Shop is not active!");
 
-//   const orderQuery = new QueryBuilder(
-//     Order.find({ shop: shopIsActive._id }).populate(
-//       "user products.product coupon"
-//     ),
-//     query
-//   )
-//     .search(["user.name", "user.email", "products.product.name"])
-//     .filter()
-//     .sort()
-//     .paginate()
-//     .fields();
+  const orderQuery = new QueryBuilder(
+    Order.find({ shop: shopIsActive._id }).populate(
+      "user products.product coupon"
+    ),
+    query
+  )
+    .search(["user.name", "user.email", "products.product.name"])
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
 
-//   const result = await orderQuery.modelQuery;
+  const result = await orderQuery.modelQuery;
 
-//   const meta = await orderQuery.countTotal();
+  const meta = await orderQuery.countTotal();
 
-//   return {
-//     meta,
-//     result,
-//   };
-// };
+  return {
+    meta,
+    result,
+  };
+};
 
 const getOrderDetails = async (orderId: string) => {
   const order = await Order.findById(orderId).populate(
@@ -192,6 +192,27 @@ const getOrderDetails = async (orderId: string) => {
 
   order.payment = await Payment.findOne({ order: order._id });
   return order;
+};
+
+const getOrdersByAdmin = async (query: Record<string, unknown>) => {
+  const orderQuery = new QueryBuilder(
+    Order.find().populate("user products.product coupon"),
+    query
+  )
+    .search(["user.name", "user.email", "products.product.name"])
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
+
+  const result = await orderQuery.modelQuery;
+
+  const meta = await orderQuery.countTotal();
+
+  return {
+    meta,
+    result,
+  };
 };
 
 const getMyOrders = async (
@@ -220,11 +241,7 @@ const getMyOrders = async (
   };
 };
 
-const changeOrderStatus = async (
-  orderId: string,
-  status: string,
-  authUser: IJwtPayload
-) => {
+const changeOrderStatus = async (orderId: string, status: string) => {
   const order = await Order.findOneAndUpdate(
     { _id: new Types.ObjectId(orderId) },
     { status },
@@ -236,6 +253,7 @@ const changeOrderStatus = async (
 export const OrderService = {
   createOrder,
   //   getMyShopOrders,
+  getOrdersByAdmin,
   getOrderDetails,
   getMyOrders,
   changeOrderStatus,

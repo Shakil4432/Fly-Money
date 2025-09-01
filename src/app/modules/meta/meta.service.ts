@@ -1,8 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import AppError from "../../errors/appError";
 import { Order } from "../order/order.model";
-import { IJwtPayload } from "../auth/auth.interface";
-import Shop from "../shop/shop.model";
 import User from "../user/user.model";
 import { Product } from "../product/product.model";
 import { Payment } from "../payment/payment.model";

@@ -59,13 +59,23 @@ const getMyOrders = catchAsync(async (req: Request, res: Response) => {
     meta: result.meta,
   });
 });
+const getOrdersByAdmin = catchAsync(async (req: Request, res: Response) => {
+  const result = await OrderService.getOrdersByAdmin(req.query);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Order retrive succesfully",
+    data: result.result,
+    meta: result.meta,
+  });
+});
 
 const changeOrderStatus = catchAsync(async (req: Request, res: Response) => {
   const { status } = req.body;
   const result = await OrderService.changeOrderStatus(
     req.params.orderId,
-    status,
-    req.user as IJwtPayload
+    status
   );
 
   sendResponse(res, {
@@ -79,6 +89,7 @@ const changeOrderStatus = catchAsync(async (req: Request, res: Response) => {
 export const OrderController = {
   createOrder,
   //   getMyShopOrders,
+  getOrdersByAdmin,
   getOrderDetails,
   getMyOrders,
   changeOrderStatus,
