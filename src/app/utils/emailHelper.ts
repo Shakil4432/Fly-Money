@@ -28,7 +28,7 @@ const sendEmail = async (
 
     // Email configuration
     const mailOptions: any = {
-      from: `"NextMart" <${config.sender_email}>`,
+      from: `"Fly Money" <${config.sender_email}>`,
       to: email,
       subject,
       html,

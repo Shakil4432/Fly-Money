@@ -6,7 +6,7 @@ import { IAuth, IJwtPayload } from "./auth.interface";
 import { createToken, verifyToken } from "./auth.utils";
 import config from "../../config";
 import mongoose from "mongoose";
-import { JwtPayload, Secret } from "jsonwebtoken";
+import { JwtPayload, Secret, SignOptions } from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { generateOtp } from "../../utils/generateOtp";
@@ -43,7 +43,7 @@ const loginUser = async (payload: IAuth) => {
     const accessToken = createToken(
       jwtPayload,
       config.jwt_access_secret as string,
-      "1m"
+      "30d"
     );
 
     const refreshToken = createToken(
@@ -180,49 +180,49 @@ const forgotPassword = async ({ email }: { email: string }) => {
   }
 };
 
-// const verifyOTP = async ({ email, otp }: { email: string; otp: string }) => {
-//   const user = await User.findOne({ email: email });
+const verifyOTP = async ({ email, otp }: { email: string; otp: string }) => {
+  const user = await User.findOne({ email: email });
 
-//   if (!user) {
-//     throw new AppError(StatusCodes.NOT_FOUND, "User not found");
-//   }
+  if (!user) {
+    throw new AppError(StatusCodes.NOT_FOUND, "User not found");
+  }
 
-//   if (!user.otpToken || user.otpToken === "") {
-//     throw new AppError(
-//       StatusCodes.BAD_REQUEST,
-//       "No OTP token found. Please request a new password reset OTP."
-//     );
-//   }
+  if (!user.otpToken || user.otpToken === "") {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "No OTP token found. Please request a new password reset OTP."
+    );
+  }
 
-//   const decodedOtpData = verifyToken(
-//     user.otpToken as string,
-//     config.jwt_otp_secret as string
-//   );
+  const decodedOtpData = verifyToken(
+    user.otpToken as string,
+    config.jwt_otp_secret as string
+  );
 
-//   if (!decodedOtpData) {
-//     throw new AppError(StatusCodes.FORBIDDEN, "OTP has expired or is invalid");
-//   }
+  if (!decodedOtpData) {
+    throw new AppError(StatusCodes.FORBIDDEN, "OTP has expired or is invalid");
+  }
 
-//   if (decodedOtpData.otp !== otp) {
-//     throw new AppError(StatusCodes.FORBIDDEN, "Invalid OTP");
-//   }
+  if (decodedOtpData.otp !== otp) {
+    throw new AppError(StatusCodes.FORBIDDEN, "Invalid OTP");
+  }
 
-//   user.otpToken = null;
-//   await user.save();
+  user.otpToken = null;
+  await user.save();
 
-//   const resetToken = jwt.sign(
-//     { email },
-//     config.jwt_pass_reset_secret as string,
-//     {
-//       expiresIn: config.jwt_pass_reset_expires_in,
-//     }
-//   );
+  const resetToken = jwt.sign(
+    { email },
+    config.jwt_pass_reset_secret as string,
+    {
+      expiresIn: config.jwt_pass_reset_expires_in as string | number,
+    } as SignOptions
+  );
 
-//   // Return the reset token
-//   return {
-//     resetToken,
-//   };
-// };
+  // Return the reset token
+  return {
+    resetToken,
+  };
+};
 
 const resetPassword = async ({
   token,
@@ -278,6 +278,6 @@ export const AuthService = {
   refreshToken,
   changePassword,
   forgotPassword,
-  //   verifyOTP,
+  verifyOTP,
   resetPassword,
 };
