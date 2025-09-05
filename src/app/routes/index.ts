@@ -11,6 +11,7 @@ import { ShopRoutes } from "../modules/shop/shop.routes";
 import { ReviewRoutes } from "../modules/review/review.routes";
 import { FlashSaleRoutes } from "../modules/flashSell/flashSale.routes";
 import { MetaRoutes } from "../modules/meta/meta.route";
+import { bannerRoutes } from "../modules/banner/banner.routes";
 const router = Router();
 
 const moduleRoutes = [
@@ -61,6 +62,10 @@ const moduleRoutes = [
   {
     path: "/meta",
     route: MetaRoutes,
+  },
+  {
+    path: "/banner",
+    route: bannerRoutes,
   },
 ];
 

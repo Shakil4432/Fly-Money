@@ -14,7 +14,7 @@ router.get("/parent-category", CategoryController.getParentCategoriesFromDB);
 
 router.post(
   "/",
-  auth(UserRole.ADMIN, UserRole.USER),
+  auth(UserRole.ADMIN),
   multerUpload.single("icon"),
   parseBody,
   validateRequest(categoryValidation.createCategoryValidationSchema),

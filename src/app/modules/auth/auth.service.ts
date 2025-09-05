@@ -43,7 +43,7 @@ const loginUser = async (payload: IAuth) => {
     const accessToken = createToken(
       jwtPayload,
       config.jwt_access_secret as string,
-      "30d"
+      "5m"
     );
 
     const refreshToken = createToken(
@@ -102,7 +102,7 @@ const refreshToken = async (token: string) => {
   const newAccessToken = createToken(
     jwtPayload,
     config.jwt_access_secret as string,
-    "10d"
+    "5m"
   );
 
   return {
